@@ -35,6 +35,7 @@ static const CGFloat FORMKeyboardAnimationDuration = 0.3f;
 @property (nonatomic) UIEdgeInsets originalInset;
 @property (nonatomic) BOOL disabled;
 @property (nonatomic) FORMData *formData;
+@property (nonatomic) NSIndexPath *activeIndexPathCellField;
 @property (nonatomic) UICollectionView *collectionView;
 @property (nonatomic) FORMLayout *layout;
 @property (nonatomic, copy) NSArray *JSON;
@@ -157,7 +158,6 @@ static const CGFloat FORMKeyboardAnimationDuration = 0.3f;
             break;
 
         case FORMFieldTypeSelect:
-        case FORMFieldTypeMultiSelect:
             identifier = [NSString stringWithFormat:@"%@-%@", FORMSelectFormFieldCellIdentifier, field.fieldID];
             [collectionView registerClass:[FORMSelectFieldCell class]
                forCellWithReuseIdentifier:identifier];
@@ -621,6 +621,11 @@ static const CGFloat FORMKeyboardAnimationDuration = 0.3f;
 
 #pragma mark - FORMBaseFieldCellDelegate
 
+- (void)fieldCellStartEdit:(UICollectionViewCell *)fieldCell {
+    NSIndexPath *indexPath = [self.collectionView indexPathForCell:fieldCell];
+    self.activeIndexPathCellField = indexPath;
+}
+
 - (void)fieldCell:(UICollectionViewCell *)fieldCell
  updatedWithField:(FORMField *)field {
     if (self.fieldUpdatedBlock) {
@@ -658,30 +663,14 @@ static const CGFloat FORMKeyboardAnimationDuration = 0.3f;
         } else if ([field.value isKindOfClass:[FORMFieldValue class]]) {
             FORMFieldValue *fieldValue = field.value;
             self.formData.values[field.fieldID] = fieldValue.valueID;
-        } else if ([field.value isKindOfClass:[NSArray class]]) {
-            NSMutableArray *mutableValue = [[NSMutableArray alloc] init];
-            for (id value in field.value) {
-                if ([value isKindOfClass:[FORMFieldValue class]] && ((FORMFieldValue *)value).selected) {
-                    [mutableValue addObject:((FORMFieldValue *)value).valueID];
-                }
-            }
-            self.formData.values[field.fieldID] = [mutableValue copy];
         } else {
             self.formData.values[field.fieldID] = field.value;
         }
 
-        BOOL hasFieldValue = (field.value && ([field.value isKindOfClass:[FORMFieldValue class]] || [field.value isKindOfClass:[NSArray class]]));
+        BOOL hasFieldValue = (field.value && [field.value isKindOfClass:[FORMFieldValue class]]);
         if (hasFieldValue) {
-            if ([field.value isKindOfClass:[NSArray class]]) {
-                for (id fieldValue in field.value) {
-                    if ([fieldValue isKindOfClass:[FORMFieldValue class]]) {
-                        [self processTargets:((FORMFieldValue *)fieldValue).targets];
-                    }
-                }
-            } else {
-                FORMFieldValue *fieldValue = field.value;
-                [self processTargets:fieldValue.targets];
-            }
+            FORMFieldValue *fieldValue = field.value;
+            [self processTargets:fieldValue.targets];
         } else if (field.targets.count > 0) {
             [self processTargets:field.targets];
         }
@@ -844,8 +833,11 @@ static const CGFloat FORMKeyboardAnimationDuration = 0.3f;
     UIEdgeInsets inset = self.originalInset;
     inset.bottom += height;
 
+    
     [UIView animateWithDuration:FORMKeyboardAnimationDuration animations:^{
         self.collectionView.contentInset = inset;
+    } completion:^(BOOL finished) {
+        [self.collectionView scrollToItemAtIndexPath: self.activeIndexPathCellField atScrollPosition:UICollectionViewScrollPositionTop animated:true];
     }];
 }
 
@@ -857,6 +849,30 @@ static const CGFloat FORMKeyboardAnimationDuration = 0.3f;
         self.collectionView.contentInset = self.originalInset;
     }];
 }
+
+//-(void)keyboardDidShow:(NSNotification *)didShowNotification {
+////    if (!self.isEditing) {
+//        CGRect keyboardRect = [[didShowNotification.userInfo valueForKey:@"UIKeyboardBoundsUserInfoKey"] CGRectValue];
+//        if (keyboardRect.size.height > 100) {
+////            self.isEditing = true;
+//            [UIView animateWithDuration:0.5 animations:^{
+//                self.collectionView.frame = CGRectMake(self.collectionView.frame.origin.x, self.collectionView.frame.origin.y, self.collectionView.bounds.size.width, self.collectionView.bounds.size.height-keyboardRect.size.height);
+//            } completion:^(BOOL finished) {
+//            }];
+//        }
+////    }
+//}
+//
+//-(void)keyboardDidHide:(NSNotification *)didHideNotification {
+////    if (self.isEditing) {
+//        CGRect keyboardRect = [[didHideNotification.userInfo valueForKey:@"UIKeyboardBoundsUserInfoKey"] CGRectValue];
+//        [UIView animateWithDuration:0.5 animations:^{
+//            self.collectionView.frame = CGRectMake(self.collectionView.frame.origin.x, self.collectionView.frame.origin.y, self.collectionView.bounds.size.width, self.collectionView.bounds.size.height+keyboardRect.size.height);
+//        } completion:^(BOOL finished) {
+////            self.isEditing = false;
+//        }];
+////    }
+//}
 
 #pragma mark - FORMHeaderViewDelegate
 

@@ -48,15 +48,6 @@ static const NSInteger FORMSelectMaxItemCount = 6;
         if ([field.value isKindOfClass:[FORMFieldValue class]]) {
             FORMFieldValue *fieldValue = (FORMFieldValue *)field.value;
             self.fieldValueLabel.text = fieldValue.title;
-        } else if ([field.value isKindOfClass:[NSArray class]]) {
-            NSMutableArray *selected = [[NSMutableArray alloc] init];
-            for (id fieldValue in field.value) {
-                if ([fieldValue isKindOfClass:[FORMFieldValue class]] && ((FORMFieldValue *)fieldValue).selected) {
-                    [selected addObject:((FORMFieldValue *)fieldValue).title];
-                }
-            }
-            NSString *multiValue = [selected componentsJoinedByString:@","];
-            self.fieldValueLabel.text = multiValue;
         } else {
             self.fieldValueLabel.text = nil;
 
@@ -100,18 +91,13 @@ static const NSInteger FORMSelectMaxItemCount = 6;
 
 - (void)fieldValuesTableViewController:(FORMFieldValuesTableViewController *)fieldValuesTableViewController
                       didSelectedValue:(FORMFieldValue *)selectedValue {
-    
-    if (self.field.type == FORMFieldTypeSelect) {
-        self.field.value = selectedValue;
-    }
+    self.field.value = selectedValue;
 
     [self updateWithField:self.field];
 
     [self validate];
 
-    if (self.field.type != FORMFieldTypeMultiSelect) {
-        [fieldValuesTableViewController dismissViewControllerAnimated:YES completion:nil];
-    }
+    [fieldValuesTableViewController dismissViewControllerAnimated:YES completion:nil];
 
     if ([self.delegate respondsToSelector:@selector(fieldCell:updatedWithField:)]) {
         [self.delegate fieldCell:self updatedWithField:self.field];

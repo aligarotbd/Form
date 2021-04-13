@@ -220,22 +220,6 @@
                             field.value = value;
                         }
                     }
-                } else if (field.type == FORMFieldTypeMultiSelect) {
-                    NSMutableArray *mutableValues = [[NSMutableArray alloc] init];
-                    for (FORMFieldValue *value in field.values) {
-                        value.selected = false;
-                        id initialMultiSelectValue = [initialValues andy_valueForKey:field.fieldID];
-                        if ([initialMultiSelectValue isKindOfClass:[NSArray class]]) {
-                            for (id multiValue in initialMultiSelectValue) {
-                                if ([value identifierIsEqualTo:multiValue]) {
-                                    value.selected = true;
-                                    break;
-                                }
-                            }
-                        }
-                        [mutableValues addObject:value];
-                    }
-                    field.value = [mutableValues copy];
                 } else {
                     field.value = [initialValues andy_valueForKey:field.fieldID];
                 }
@@ -394,8 +378,6 @@
                 }
             } else {
                 if ([value isKindOfClass:[NSString class]] && [value length] > 0) {
-                    [values addEntriesFromDictionary:@{fieldID : value}];
-                } else if ([value isKindOfClass:[NSArray class]]) {
                     [values addEntriesFromDictionary:@{fieldID : value}];
                 } else {
                     if ([value respondsToSelector:NSSelectorFromString(@"stringValue")]) {
@@ -1244,14 +1226,6 @@ includingHiddenFields:(BOOL)includingHiddenFields
 
         if ([field.value isKindOfClass:[FORMFieldValue class]]) {
             value = [field.value valueID];
-        } else if ([field.value isKindOfClass:[NSArray class]]) {
-            NSMutableArray *fieldValues = [[NSMutableArray alloc] init];
-            for (FORMFieldValue *fieldValue in field.value) {
-                if (fieldValue.selected) {
-                    [fieldValues addObject:[fieldValue valueID]];
-                }
-            }
-            value = [fieldValues copy];
         } else {
             value = field.value;
         }

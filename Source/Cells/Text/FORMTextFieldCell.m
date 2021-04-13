@@ -329,6 +329,7 @@ static NSString * const FORMTooltipBackgroundColorKey = @"tooltip_background_col
 #pragma mark - FORMTextFieldDelegate
 
 - (void)textFormFieldDidBeginEditing:(FORMTextField *)textField {
+    [self.delegate fieldCellStartEdit: self];
     [self performSelector:@selector(showTooltip) withObject:nil afterDelay:0.1f];
 }
 
